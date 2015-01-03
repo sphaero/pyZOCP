@@ -452,10 +452,13 @@ class ZOCP(Pyre):
         Update the value of the emitter and signal all subscribed receivers
 
         Arguments are:
-        * emitter: name of the emitting capability
+        * emitter: list of names of the keys to emitting capability
         * data: value
         """
-        self.capability[emitter]['value'] = data
+        if isinstance(emitter, str):
+            self.capability[emitter]['value'] = data
+        else:
+            dict_set(emitter + ('value',), data)
         msg = json.dumps({'SIG': [emitter, data]})
 
         for subscriber in self.subscribers:
@@ -773,8 +776,17 @@ class ZOCP(Pyre):
 
     def _handle_SIG(self, data, peer, name, grp):
         [emitter, value] = data
-        if emitter in self.peers_capabilities[peer]:
-            self.peers_capabilities[peer][emitter].update({'value': value})
+        if isinstance(emitter, str):
+            if emitter in self.peers_capabilities[peer]:
+                self.peers_capabilities[peer][emitter].update({'value': value})
+        else:
+            try:
+                emit = dict_get(self.peers_capabilities[peer], emitter)
+            except KeyError:
+                logger.debug("_handle_SIG emitter {0} not found".format(emitter))
+                return
+            else:
+                emit.update({'value': value})
 
         if peer in self.subscriptions:
             subscription = self.subscriptions[peer]
