@@ -1,3 +1,3 @@
-__all__ = ['zocp']
+__all__ = ['zocp', 'parameter']
 
 from .zocp import ZOCP
