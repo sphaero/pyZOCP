@@ -1,4 +1,7 @@
+import logging
 from collections import MutableSequence
+
+logger = logging.getLogger(__name__)
 
 class ZOCPParameterList(MutableSequence):
     """
@@ -106,9 +109,9 @@ class ZOCPParameter(object):
         self._znode.emit_signal(self.sig_id, self._to_bytes)
 
     def set_sig_id(self, sig_id):
-        if self._sig_id != None:
-            logger.warning("ZOCPParameter signal id is overwritten from \
-                            {0} to {1}".format(self._sig_id, sig_id))
+        if self._sig_id != None and sig_id != None:
+            logger.warning("ZOCPParameter signal id is overwritten from"\
+                           +" {0} to {1}".format(self._sig_id, sig_id))
         self._sig_id = sig_id
 
     def get_sig_id(self):
