@@ -43,7 +43,10 @@ class ZOCPParameterList(MutableSequence):
         self._list[ii] = val
 
     def __str__(self):
-        return str(self._list)
+        return "ZOCPParameterList:"+ str(self._list)
+
+    def __repr__(self):
+        return self._list
 
     def insert(self, param):
         if param.sig_id == None:
@@ -92,14 +95,14 @@ class ZOCPParameter(object):
         self.type_hint = type_hint                  # a hint of the type of data
         self.signature = signature                  # signature describing the parameter in memory
         self.extended_meta = kwargs                 # optional extra meta data
-        # get ourselves an id by inserting in the params_list
-        self._sig_id = sig_id                       # the id of the parameter (needed for referencing to other nodes)
-        ZOCPParameter.params_list.insert(self)
         # in case we're an emitter overwrite the set method
         if 'e' in self.access:
             self.set = self._set_emit
         self._subscribers = {}                      # dictionary containing peer receivers for emitted signals in case we're an emitter
         self._subscriptions = {}                    # dictionary containing peer emitters for receiver in case we are a signal receiver
+        # get ourselves an id by inserting in the params_list
+        self._sig_id = sig_id                       # the id of the parameter (needed for referencing to other nodes)
+        ZOCPParameter.params_list.insert(self)
 
     def _set_emit(self, value):
         """
