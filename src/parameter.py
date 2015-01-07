@@ -98,8 +98,8 @@ class ZOCPParameter(object):
         # in case we're an emitter overwrite the set method
         if 'e' in self.access:
             self.set = self._set_emit
-        self._subscribers = {}                      # dictionary containing peer receivers for emitted signals in case we're an emitter
-        self._subscriptions = {}                    # dictionary containing peer emitters for receiver in case we are a signal receiver
+        self._subscribers = []                      # dictionary containing peer receivers for emitted signals in case we're an emitter
+        self._subscriptions = []                    # dictionary containing peer emitters for receiver in case we are a signal receiver
         # get ourselves an id by inserting in the params_list
         self._sig_id = sig_id                       # the id of the parameter (needed for referencing to other nodes)
         ZOCPParameter.params_list.insert(self)
@@ -146,6 +146,7 @@ class ZOCPParameter(object):
         """
         d = self.extended_meta
         d['name'] = self.name
+        d['value'] = self._value
         if self.min:
             d['min'] = self.min
         if self.max:
@@ -166,7 +167,12 @@ class ZOCPParameter(object):
         return str(self.to_dict())
 
     def __repr__(self):
-        return str(self.to_dict())
+        return "ZOCPParameter({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8})"\
+        .format("znode", self._value, self.name, self.access, self.type_hint, self.signature, self.min, self.max, self.step, self.sig_id)
+        #return self.to_dict().__repr__()
+
+    def __dict__(self):
+        return to_dict()
 
     def remove(self):
         # try to remove itself from the params_list
