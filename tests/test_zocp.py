@@ -2,10 +2,13 @@ import unittest
 import zocp
 import zmq
 import time
+import logging
 
 class ZOCPTest(unittest.TestCase):
     
     def setUp(self, *args, **kwargs):
+        #zl = logging.getLogger("zocp")
+        #zl.setLevel(logging.DEBUG)
         ctx = zmq.Context()
         self.node1 = zocp.ZOCP(ctx=ctx)
         self.node1.set_header("X-TEST", "1")
@@ -81,36 +84,36 @@ class ZOCPTest(unittest.TestCase):
         # give time for dispersion
         self.node1.run_once()
         self.node2.run_once()
-        self.node2.signal_subscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
+        self.node2.signal_subscribe(self.node2.get_uuid(), 0, self.node1.get_uuid(), 0)
         # give time for dispersion
         time.sleep(0.5)
         self.node1.run_once()
         # subscriptions structure: {Emitter nodeID: {'EmitterID': ['Local ReceiverID']}}
-        self.assertIn("TestRecvFloat", self.node2.subscriptions[self.node1.get_uuid()]["TestEmitFloat"])
-        self.assertIn("TestRecvFloat", self.node1.subscribers[self.node2.get_uuid()]["TestEmitFloat"])
+        self.assertIn(0, self.node2.subscriptions[self.node1.get_uuid()][0])
+        self.assertIn((self.node2.get_uuid().hex, 0), self.node1._parameter_list[0]._subscribers)
         # unsubscribe
-        self.node2.signal_unsubscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
+        self.node2.signal_unsubscribe(self.node2.get_uuid(), 0, self.node1.get_uuid(), 0)
         time.sleep(0.5)
         self.node1.run_once()
-        self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.get_uuid(), {}).get("TestEmitFloat", {}))
-        self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.get_uuid(), {}).get("TestEmitFloat", {}))
+        self.assertNotIn(self.node1.get_uuid(), self.node2.subscriptions)
+        self.assertNotIn((self.node2.get_uuid().hex, 0), self.node1._parameter_list[0]._subscribers)
 
     def test_emit_signal(self):
-        self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
-        self.node2.register_float("TestRecvFloat", 1.0, 'rws')
+        param1 = self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
+        param2 = self.node2.register_float("TestRecvFloat", 1.0, 'rws')
         # give time for dispersion
         time.sleep(0.5)
         self.node1.run_once()
-        self.node2.signal_subscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
+        self.node2.signal_subscribe(self.node2.get_uuid(), 0, self.node1.get_uuid(), 0)
         # give time for dispersion
         time.sleep(0.1)
         self.node1.run_once()
-        self.node1.emit_signal("TestEmitFloat", 2.0)
+        param1.set(2.0) #self.node1.emit_signal(0, 2.0)
         time.sleep(0.1)
         self.node2.run_once()
-        self.assertEqual(2.0, self.node2.capability["TestRecvFloat"]["value"])
+        self.assertEqual(2.0, param2.get())
         # unsubscribe
-        self.node2.signal_unsubscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
+        self.node2.signal_unsubscribe(self.node2.get_uuid(), 0, self.node1.get_uuid(), 0)
         time.sleep(0.1)
         self.node1.run_once()
 # end ZOCPTest

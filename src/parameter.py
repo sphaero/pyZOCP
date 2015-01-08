@@ -108,7 +108,7 @@ class ZOCPParameter(object):
         if self._params_list == None:
             self._params_list = self._znode._parameter_list
         if self._monitor_subscribers == None:
-            self._monitor_subscribers = self._znode._monitor_subscribers
+            self._monitor_subscribers = self._znode.monitor_subscribers
         self._params_list.insert(self)
 
     def _set_emit(self, value):
@@ -119,7 +119,7 @@ class ZOCPParameter(object):
         msg = json.dumps({'SIG': [self.sig_id, self._value]})
         for peer, recv_id in self._subscribers:
             self._znode.whisper(uuid.UUID(peer), msg.encode('utf-8'))
-        for peer in self.monitor_subscribers:
+        for peer in self._monitor_subscribers:
             self._znode.whisper(peer, msg.encode('utf-8'))
 
     def set_sig_id(self, sig_id):
