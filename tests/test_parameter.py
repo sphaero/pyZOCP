@@ -62,7 +62,7 @@ class ZOCPTest(unittest.TestCase):
         plist = ZOCPParameterList()
         mlist = []
         param1 = ZOCPParameter(None, 1, 'param1', 'rwes', None, 'i', params_list=plist, monitor_list=mlist)
-        d = {'sig_id': 0, 'name': 'param1', 'access': 'rwes', 'typeHint': None, 'sig': 'i', 'subscribers': [], 'subscriptions': [], 'value': 1}
+        d = {'sig_id': 0, 'name': 'param1', 'access': 'rwes', 'typeHint': None, 'sig': 'i', 'subscribers': [], 'value': 1}
         self.assertDictEqual(param1.to_dict(), d)
         param2 = ZOCPParameter(None, 0.1, 'param2', 'rw', 'float', 'f', -1.0, 1.0, 0.01, params_list=plist, monitor_list=mlist)
         d = {'sig_id': 1, 'name': 'param2', 'access': 'rw', 'typeHint': 'float', 'sig': 'f', 'value': 0.1, 'min': -1.0, 'max': 1.0, 'step': 0.01}
