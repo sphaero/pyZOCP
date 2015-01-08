@@ -95,20 +95,24 @@ class ZOCPParameter(object):
         self.access = access                        # description of access methods (Read,Write,signal Emitter,Signal receiver)
         self.type_hint = type_hint                  # a hint of the type of data
         self.signature = signature                  # signature describing the parameter in memory
+        self._subscribers = []                      # list of peer receivers for emitted signals in case we're an emitter
+        self._sig_id = sig_id                       # the id of the parameter (needed for referencing to other nodes)
+
         # get the params_list and monitor_list before we get extra meta data!
         self._params_list = kwargs.pop('params_list', None)
         self._monitor_subscribers = kwargs.pop("monitor_list", None)
+
         self.extended_meta = kwargs                 # optional extra meta data
+
         # in case we're an emitter overwrite the set method
         if 'e' in self.access:
             self.set = self._set_emit
-        self._subscribers = []                      # list of peer receivers for emitted signals in case we're an emitter
-        # get ourselves an id by inserting in the params_list
-        self._sig_id = sig_id                       # the id of the parameter (needed for referencing to other nodes)
+
         if self._params_list == None:
             self._params_list = self._znode._parameter_list
         if self._monitor_subscribers == None:
             self._monitor_subscribers = self._znode.monitor_subscribers
+        # get ourselves an sig_id by inserting in the params_list
         self._params_list.insert(self)
 
     def _set_emit(self, value):
@@ -148,7 +152,6 @@ class ZOCPParameter(object):
     def unsubscribe_receiver(self, recv_peer, receiver_id):
         # update subscribers list
         # TODO: I'm not sure we need to register the receiver_id???
-        print("unsub", recv_peer, receiver_id)
         subscriber = (recv_peer.hex, receiver_id)
         if subscriber in self._subscribers:
             self._subscribers.remove(subscriber)
