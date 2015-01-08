@@ -1,4 +1,6 @@
 import logging
+import json
+import uuid
 from collections import MutableSequence
 
 logger = logging.getLogger(__name__)
@@ -81,7 +83,6 @@ class ZOCPParameter(object):
     """
     Wrapper class for parameters used through ZOCP
     """
-    params_list = ZOCPParameterList()
 
     def __init__(self, znode, value, name, access, type_hint, signature, min=None, max=None, step=None, sig_id=None, *args, **kwargs):
         self._value = value
@@ -94,22 +95,32 @@ class ZOCPParameter(object):
         self.access = access                        # description of access methods (Read,Write,signal Emitter,Signal receiver)
         self.type_hint = type_hint                  # a hint of the type of data
         self.signature = signature                  # signature describing the parameter in memory
+        # get the params_list and monitor_list before we get extra meta data!
+        self._params_list = kwargs.pop('params_list', None)
+        self._monitor_subscribers = kwargs.pop("monitor_list", None)
         self.extended_meta = kwargs                 # optional extra meta data
         # in case we're an emitter overwrite the set method
         if 'e' in self.access:
             self.set = self._set_emit
-        self._subscribers = []                      # dictionary containing peer receivers for emitted signals in case we're an emitter
-        self._subscriptions = []                    # dictionary containing peer emitters for receiver in case we are a signal receiver
+        self._subscribers = []                      # list of peer receivers for emitted signals in case we're an emitter
         # get ourselves an id by inserting in the params_list
         self._sig_id = sig_id                       # the id of the parameter (needed for referencing to other nodes)
-        ZOCPParameter.params_list.insert(self)
+        if self._params_list == None:
+            self._params_list = self._znode._parameter_list
+        if self._monitor_subscribers == None:
+            self._monitor_subscribers = self._znode._monitor_subscribers
+        self._params_list.insert(self)
 
     def _set_emit(self, value):
         """
         Set and emit value as a signal
         """ 
         self._value = value
-        self._znode.emit_signal(self.sig_id, self._to_bytes)
+        msg = json.dumps({'SIG': [self.sig_id, self._value]})
+        for peer, recv_id in self._subscribers:
+            self._znode.whisper(uuid.UUID(peer), msg.encode('utf-8'))
+        for peer in self.monitor_subscribers:
+            self._znode.whisper(peer, msg.encode('utf-8'))
 
     def set_sig_id(self, sig_id):
         if self._sig_id != None and sig_id != None:
@@ -126,12 +137,23 @@ class ZOCPParameter(object):
     def set(self, value):
         self._value = value
 
-    def signal_subscribe_emitter(self, emitter, peer, receiver):
-        pass
-    
-    def signal_subscribe_receiver(self, receiver, peer, emitter):
-        pass
-        
+    def subscribe_receiver(self, recv_peer, receiver_id):
+        # update subscribers list
+        # TODO: I'm not sure we need to register the receiver_id???
+        subscriber = (recv_peer.hex, receiver_id)
+        if subscriber not in self._subscribers:
+            self._subscribers.append(subscriber)
+            #self._znode._on_modified(data={self.sig_id: {"subscribers": self._subscribers}})
+
+    def unsubscribe_receiver(self, recv_peer, receiver_id):
+        # update subscribers list
+        # TODO: I'm not sure we need to register the receiver_id???
+        print("unsub", recv_peer, receiver_id)
+        subscriber = (recv_peer.hex, receiver_id)
+        if subscriber in self._subscribers:
+            self._subscribers.remove(subscriber)
+            self._znode._on_modified(data={self.sig_id: {"subscribers": self._subscribers}})
+
     def _to_bytes(self):
         """
         converts value to an array of bytes
@@ -159,8 +181,6 @@ class ZOCPParameter(object):
         d['sig_id'] = self.sig_id
         if 'e' in self.access:
             d['subscribers'] = self._subscribers
-        if 's' in self.access:
-            d['subscriptions'] = self._subscriptions
         return d
 
     def __str__(self):
@@ -177,9 +197,8 @@ class ZOCPParameter(object):
     def remove(self):
         # try to remove itself from the params_list
         # could already be done by clear()
-        print("Removing", ZOCPParameter.params_list is self.__class__.params_list, ZOCPParameter.params_list, self.__class__.params_list)
         try:
-            ZOCPParameter.params_list.remove(self)
+            self._params_list.remove(self)
         except ValueError:
             pass
 
@@ -188,13 +207,14 @@ class ZOCPParameter(object):
 
 
 if __name__ == '__main__':
-    capability = []
-    param1 = ZOCPParameter(None, 1, 'param1', 'rwes', None, 'i')
-    param2 = ZOCPParameter(None, 0.1, 'param2', 'rw', None, 'f')
-    param3 = ZOCPParameter(None, 0.3, 'param3', 'rw', None, 'f')
+    plist = ZOCPParameterList()
+    mlist = []
+    param1 = ZOCPParameter(None, 1, 'param1', 'rwes', None, 'i', params_list=plist, monitor_list=mlist)
+    param2 = ZOCPParameter(None, 0.1, 'param2', 'rw', None, 'f', params_list=plist, monitor_list=mlist)
+    param3 = ZOCPParameter(None, 0.3, 'param3', 'rw', None, 'f', params_list=plist, monitor_list=mlist)
     print("removing 3")
     param3.remove()
     print("adding 4&5")
-    param4 = ZOCPParameter(None, 0.4, 'param4', 'rw', None, 'f')
-    param5 = ZOCPParameter(None, 0.5, 'param5', 'rw', None, 'f')
-    print(ZOCPParameter.params_list)
+    param4 = ZOCPParameter(None, 0.4, 'param4', 'rw', None, 'f', params_list=plist, monitor_list=mlist)
+    param5 = ZOCPParameter(None, 0.5, 'param5', 'rw', None, 'f', params_list=plist, monitor_list=mlist)
+    print(plist)
