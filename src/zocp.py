@@ -35,18 +35,6 @@ def dict_get(d, keys):
         d = d[key]
     return d
 
-def make_dict(keys, value):
-    """
-    returns a nested dict
-    keys argument must be a list
-    """
-    a = {}
-    d = a
-    for key in keys[:-1]:
-        d = d[key]
-    d[keys[-1]] = value
-    return a
-
 def dict_set(d, keys, value):
     """
     sets a value in a nested dict
