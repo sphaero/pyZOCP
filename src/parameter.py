@@ -147,7 +147,7 @@ class ZOCPParameter(object):
         subscriber = (recv_peer.hex, receiver_id)
         if subscriber not in self._subscribers:
             self._subscribers.append(subscriber)
-            #self._znode._on_modified(data={self.sig_id: {"subscribers": self._subscribers}})
+            self._znode._on_modified(data={self.sig_id: {"subscribers": self._subscribers}})
 
     def unsubscribe_receiver(self, recv_peer, receiver_id):
         # update subscribers list
