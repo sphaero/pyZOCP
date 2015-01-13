@@ -568,8 +568,8 @@ class ZOCP(Pyre):
             return
 
         if type == "EXIT":
-            if peer in self.subscribers:
-                self.subscribers.pop(peer)
+            if peer in self.monitor_subscribers:
+                self.monitor_subscribers.remove(peer)
             if peer in self.subscriptions:
                 self.subscriptions.pop(peer)
             self.on_peer_exit(peer, name, msg)
@@ -674,10 +674,10 @@ class ZOCP(Pyre):
             return
 
         # the sender is the receiver! This means we are the emitter
-        if emitter_id is not None:
-            self._parameter_list[emitter_id].subscribe_receiver(recv_peer, receiver_id)
-        else:
+        if emitter_id == None:
             self.monitor_subscribers.add(recv_peer)
+        else:
+            self._parameter_list[emitter_id].subscribe_receiver(recv_peer, receiver_id)
 
         self.on_peer_subscribed(peer, name, data)
         return
@@ -757,14 +757,12 @@ class ZOCP(Pyre):
                         self.whisper(subscriber, msg.encode('utf-8'))
                 data = {}
 
-        if any(data):
+        if len(data):
             msg = json.dumps({ 'MOD' :data}).encode('utf-8')
             for subscriber in self.monitor_subscribers:
                 # inform node that are subscribed to one or more
                 # updated capabilities that they have changed
-                if subscriber != peer and (
-                        None in self.subscribers[subscriber] or
-                        len(set(self.subscribers[subscriber]) & set(data)) > 0):
+                if subscriber != peer:
                     self.whisper(subscriber, msg)
 
     def run_once(self, timeout=None):
