@@ -35,6 +35,18 @@ def dict_get(d, keys):
         d = d[key]
     return d
 
+def make_dict(keys, value):
+    """
+    returns a nested dict
+    keys argument must be a list
+    """
+    a = {}
+    d = a
+    for key in keys[:-1]:
+        d = d[key]
+    d[keys[-1]] = value
+    return a
+
 def dict_set(d, keys, value):
     """
     sets a value in a nested dict
@@ -177,6 +189,7 @@ class ZOCP(Pyre):
 
     def _register_param(self, name, value, type_hint, signature, access='r', min=None, max=None, step=None):
         param = ZOCPParameter(self, value, name, access, type_hint, signature, min, max, step)
+        param.set_object(self._cur_obj_keys)
         self._cur_obj[name] = param.to_dict()
         self._on_modified(data={name: param.to_dict()})
         return param

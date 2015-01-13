@@ -135,6 +135,14 @@ class ZOCPParameter(object):
     def get_sig_id(self):
         return self._sig_id
 
+    def set_object(obj):
+        """
+        Set object path
+        
+        we need this in order to find ourselves in the capability tree
+        """
+        self._object = obj
+
     def get(self):
         return self._value
 
@@ -155,7 +163,8 @@ class ZOCPParameter(object):
         subscriber = (recv_peer.hex, receiver_id)
         if subscriber in self._subscribers:
             self._subscribers.remove(subscriber)
-            self._znode._on_modified(data={self.sig_id: {"subscribers": self._subscribers}})
+            data=zocp.make_dict(self._object, {"subscribers": self._subscribers})
+            self._znode._on_modified(data=data)
 
     def _to_bytes(self):
         """
