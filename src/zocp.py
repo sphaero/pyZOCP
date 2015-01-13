@@ -743,21 +743,6 @@ class ZOCP(Pyre):
                 data = new_data
         self.on_modified(peer, name, data)
 
-        if len(data) == 1:
-            # if the only modification is a value change,
-            # emit a SIG instead of a MOD
-            name = list(data.keys())[0]
-            if len(data[name]) == 1 and 'value' in data[name]:
-                msg = json.dumps({'SIG': [name, data[name]['value']]})
-                for subscriber in self.subscribers:
-                    # no need to send the signal to the node that
-                    # modified the value
-                    if subscriber != peer and (
-                            None in self.subscribers[subscriber] or
-                            name in self.subscribers[subscriber]):
-                        self.whisper(subscriber, msg.encode('utf-8'))
-                data = {}
-
         if len(data):
             msg = json.dumps({ 'MOD' :data}).encode('utf-8')
             for subscriber in self.monitor_subscribers:

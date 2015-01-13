@@ -23,7 +23,7 @@ class SubscriberNode(ZOCP):
         split_name = name.split("@",1)
         if(split_name[0] == 'subscribee'):
             #self.signal_subscribe(self.get_uuid(), 'My String', peer, 'My String')
-            self.signal_subscribe(self.get_uuid(), 'Linked counter', peer, 'Counter')
+            self.signal_subscribe(self.get_uuid(), 1, peer, 2)
     
         
 if __name__ == '__main__':
