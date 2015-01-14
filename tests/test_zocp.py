@@ -109,30 +109,30 @@ class ZOCPTest(unittest.TestCase):
         self.monitor_node.set_name("monitor")
         self.monitor_node.start()
         # give time for dispersion
-        self.node1.run_once(0)
-        self.node2.run_once(0)
-        self.monitor_node.run_once(0)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.monitor_node.run_once(100)
         # subscribe monitor to both nodes
         self.monitor_node.signal_subscribe(self.monitor_node.get_uuid(), None, self.node1.get_uuid(), None)
         self.monitor_node.signal_subscribe(self.monitor_node.get_uuid(), None, self.node2.get_uuid(), None)
         # give time for dispersion
         time.sleep(0.5)
-        self.node1.run_once(0)
-        self.node2.run_once(0)
-        self.monitor_node.run_once(0)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.monitor_node.run_once(100)
         # monitor subscribers structure: [PeerId]
         self.assertIn(self.monitor_node.get_uuid(), self.node1.monitor_subscribers)
         self.assertIn(self.monitor_node.get_uuid(), self.node2.monitor_subscribers)
         # subscribe signal from node2 to node1
         self.node2.signal_subscribe(self.node2.get_uuid(), 0, self.node1.get_uuid(), 0)
         time.sleep(0.5)
-        self.node1.run_once(0)
-        self.node2.run_once(0)
-        self.monitor_node.run_once(0)
-        time.sleep(0.5)
-        self.node1.run_once(0)
-        self.node2.run_once(0)
-        self.monitor_node.run_once(0)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.monitor_node.run_once(100)
+        #time.sleep(0.5)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.monitor_node.run_once(100)
         # monitor should now know about subscription of node2 to node1
         for key, val in self.monitor_node.peers_capabilities[self.node1.get_uuid()].items():
             if val.get('sig_id') == 0:
@@ -140,10 +140,12 @@ class ZOCPTest(unittest.TestCase):
         # unsubscribe
         self.node2.signal_unsubscribe(self.node2.get_uuid(), 0, self.node1.get_uuid(), 0)
         time.sleep(0.5)
-        self.node1.run_once(0)
-        self.node2.run_once(0)
-        time.sleep(0.5)
-        self.monitor_node.run_once(0)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.monitor_node.run_once(100)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.monitor_node.run_once(100)
         # monitor should now not now about subscription of node2 to node1
         for key, val in self.monitor_node.peers_capabilities[self.node1.get_uuid()].items():
             if val.get('sig_id') == 0:

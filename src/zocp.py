@@ -82,7 +82,7 @@ class ZOCP(Pyre):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.subscriptions = {}
-        self.monitor_subscribers = set()
+        self.monitor_subscribers = []
         self.set_header("X-ZOCP", "1")
         self.peers_capabilities = {} # peer id : capability data
         self.capability = kwargs.get('capability', {})
@@ -676,7 +676,8 @@ class ZOCP(Pyre):
 
         # the sender is the receiver! This means we are the emitter
         if emitter_id == None:
-            self.monitor_subscribers.add(recv_peer)
+            if recv_peer not in self.monitor_subscribers:
+                self.monitor_subscribers.append(recv_peer)
         else:
             self._parameter_list[emitter_id].subscribe_receiver(recv_peer, receiver_id)
 
@@ -702,10 +703,13 @@ class ZOCP(Pyre):
             self.signal_unsubscribe(emit_peer, emitter_id, recv_peer, receiver_id)
             return
 
-        if emitter_id is not None:
-            self._parameter_list[emitter_id].unsubscribe_receiver(recv_peer, receiver_id)
+        if emitter_id == None:
+            try:
+                self.monitor_subscribers.remove(recv_peer)
+            except ValueError:
+                pass
         else:
-            self.monitor_subscribers.add(recv_peer)
+            self._parameter_list[emitter_id].unsubscribe_receiver(recv_peer, receiver_id)
 
         self.on_peer_unsubscribed(peer, name, data)
 
@@ -766,7 +770,7 @@ class ZOCP(Pyre):
             for fd, ev in items.items():
                 if self.inbox == fd and ev == zmq.POLLIN:
                     self.get_message()
-            # just q quick query
+            # just a quick query
             items = dict(self.poller.poll(0))
 
     def run(self, timeout=None):
