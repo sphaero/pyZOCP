@@ -367,7 +367,7 @@ class ZOCP(Pyre):
         if emit_peer == self.get_uuid():
             # we are the emitter so register the receiver
             if emitter_id == None:
-                self._monitor_subscribers.add(recv_peer)
+                self.monitor_subscribers.add(recv_peer)
             else:
                 self._parameter_list[emitter_id].subscribe_receiver(recv_peer, receiver_id)
 
