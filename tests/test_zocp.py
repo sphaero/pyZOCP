@@ -29,6 +29,7 @@ class ZOCPTest(unittest.TestCase):
             self.monitor_node.stop()
         except:
             pass
+        self.ctx.destroy()
     # end tearDown
 
     def test_get_name(self):
@@ -81,6 +82,38 @@ class ZOCPTest(unittest.TestCase):
         self.assertIn("TEST", self.node1.get_peer_groups())
         self.assertIn("TEST", self.node2.get_peer_groups())
     # end test_get_peer_groups
+
+    def test_param(self):
+        # make node2 monitor node1
+        self.node2.signal_subscribe(self.node2.get_uuid(), None, self.node1.get_uuid(), None)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        # add parameter to node1 and retrieve from node2
+        bool_param = self.node1.register_bool("test_bool", True, 'rw')
+        # sends out a MOD
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.assertIn("test_bool", self.node2.peers_capabilities.get(self.node1.get_uuid(), {}).keys())
+        self.assertDictEqual(bool_param.to_dict(), self.node2.peers_capabilities.get(self.node1.get_uuid()).get("test_bool"))
+
+    def test_object_param(self):
+        # make node2 monitor node1
+        self.node2.signal_subscribe(self.node2.get_uuid(), None, self.node1.get_uuid(), None)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        # add parameter to node1 and retrieve from node2
+        self.node1.set_object("test_object")
+        float_param = self.node1.register_float("test_float", True, 'rw')
+        # sends out a MOD
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.node1.run_once(100)
+        self.node2.run_once(100)
+        self.assertIn("test_object", self.node2.peers_capabilities.get(self.node1.get_uuid(), {}).get("objects").keys())
+        self.assertIn("test_float", self.node2.peers_capabilities.get(self.node1.get_uuid(), {}).get("objects").get("test_object").keys())
+        self.assertDictEqual(float_param.to_dict(), self.node2.peers_capabilities[self.node1.get_uuid()]['objects']["test_object"]["test_float"])
 
     def test_signal_subscribe(self):
         self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
