@@ -1,11 +1,13 @@
 #!/usr/bin/python
 
-from zocp import ZOCP
 import logging
+from zocp import ZOCP
 
 if __name__ == '__main__':
     zl = logging.getLogger("zocp")
     zl.setLevel(logging.DEBUG)
+    sh = logging.StreamHandler()
+    zl.addHandler(sh)
 
     z = ZOCP()
     z.set_name("ZOCP-Test")
