@@ -1,5 +1,9 @@
 import unittest
-import zocp
+try:
+    from zocp_zyre import ZOCP
+    print("USING ZYRE")
+except Exception as e:
+    from zocp import ZOCP
 import zmq
 import time
 import sys
@@ -12,11 +16,11 @@ if sys.version.startswith('3'):
 class ZOCPTest(unittest.TestCase):
     
     def setUp(self, *args, **kwargs):
-        ctx = zmq.Context()
-        self.node1 = zocp.ZOCP("node1", ctx=ctx)
-        self.node1.set_header("X-TEST", "1")
-        self.node2 = zocp.ZOCP("node2", ctx=ctx)
-        self.node2.set_header("X-TEST", "1")
+        #ctx = zmq.Context()
+        self.node1 = ZOCP("node1".encode('utf-8'))#, ctx=ctx)
+        self.node1.set_header("X-TEST".encode('utf-8'), "1".encode('utf-8'))
+        self.node2 = ZOCP("node2".encode('utf-8'))#, ctx=ctx)
+        self.node2.set_header("X-TEST".encode('utf-8'), "1".encode('utf-8'))
         self.node1.start()
         self.node2.start()
         # give time for nodes to exchange
@@ -29,8 +33,8 @@ class ZOCPTest(unittest.TestCase):
     # end tearDown
 
     def test_name(self):
-        self.assertEqual("node1", self.node1.name())
-        self.assertEqual("node2", self.node2.name())
+        self.assertEqual("node1".encode('utf-8'), self.node1.name())
+        self.assertEqual("node2".encode('utf-8'), self.node2.name())
     # end test_name
 
     def test_peers(self):
@@ -45,38 +49,38 @@ class ZOCPTest(unittest.TestCase):
         id1 = self.node1.uuid()
         id2 = self.node2.uuid()
 
-        self.assertIsInstance(self.node1.peer_address(id2), unicode)
-        self.assertIsInstance(self.node2.peer_address(id1), unicode)
+        self.assertIsInstance(self.node1.peer_address(id2), bytes)
+        self.assertIsInstance(self.node2.peer_address(id1), bytes)
     # end test_peer_address
 
     def test_peer_header_value(self):
         id1 = self.node1.uuid()
         id2 = self.node2.uuid()
 
-        self.assertEqual("1", self.node1.peer_header_value(id2, "X-TEST"))
-        self.assertEqual("1", self.node2.peer_header_value(id1, "X-TEST"))
+        self.assertEqual("1".encode('utf-8'), self.node1.peer_header_value(id2, "X-TEST".encode('utf-8')))
+        self.assertEqual("1".encode('utf-8'), self.node2.peer_header_value(id1, "X-TEST".encode('utf-8')))
     # end test_peer_header_value
 
     def test_own_groups(self):
-        self.node1.join("TEST")
-        self.node2.join("TEST")
+        self.node1.join("TEST".encode('utf-8'))
+        self.node2.join("TEST".encode('utf-8'))
 
         # pyre works asynchronous so give some time to let changes disperse
         time.sleep(0.5)
 
-        self.assertIn("TEST", self.node1.own_groups())
-        self.assertIn("TEST", self.node2.own_groups())
+        self.assertIn("TEST".encode('utf-8'), self.node1.own_groups())
+        self.assertIn("TEST".encode('utf-8'), self.node2.own_groups())
     # end test_own_groups
 
     def test_peer_groups(self):
-        self.node1.join("TEST")
-        self.node2.join("TEST")
+        self.node1.join("TEST".encode('utf-8'))
+        self.node2.join("TEST".encode('utf-8'))
 
         # pyre works asynchronous so give some time to let changes disperse
         time.sleep(0.5)
 
-        self.assertIn("TEST", self.node1.peer_groups())
-        self.assertIn("TEST", self.node2.peer_groups())
+        self.assertIn("TEST".encode('utf-8'), self.node1.peer_groups())
+        self.assertIn("TEST".encode('utf-8'), self.node2.peer_groups())
     # end test_peer_groups
 
     def test_get_value(self):
@@ -128,10 +132,10 @@ class ZOCPTest(unittest.TestCase):
         self.node2.run_once(5)
         self.node1.run_once(5)
         # subscriptions structure: {Emitter nodeID: {'EmitterID': ['Local ReceiverID']}}
-        self.assertIn("TestRecvFloat", self.node1.subscribers[self.node2.uuid()]["TestEmitFloat"])
-        self.assertIn("TestRecvFloat", self.node2.subscriptions[self.node1.uuid()]["TestEmitFloat"])
+        self.assertIn("TestRecvFloat", self.node1.subscribers[self.node2.uuid().decode('utf-8')]["TestEmitFloat"])
+        self.assertIn("TestRecvFloat", self.node2.subscriptions[self.node1.uuid().decode('utf-8')]["TestEmitFloat"])
         # unsubscribe
-        self.node1.signal_unsubscribe(self.node2.uuid(), "TestRecvFloat", self.node1.uuid(), "TestEmitFloat")
+        self.node1.signal_unsubscribe(self.node2.uuid().decode('utf-8'), "TestRecvFloat", self.node1.uuid().decode('utf-8'), "TestEmitFloat")
         # An unsubscribe results in:
         # * whisper MOD, to update subscribers (self._on_modified)
         # * whisper UNSUB, to the receiver or emitter
@@ -143,8 +147,8 @@ class ZOCPTest(unittest.TestCase):
         self.node1.run_once(5)
         self.node2.run_once(5)
         self.node1.run_once(5)
-        self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.uuid(), {}).get("TestEmitFloat", {}))
-        self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.uuid(), {}).get("TestEmitFloat", {}))
+        self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.uuid().decode('utf-8'), {}).get("TestEmitFloat", {}))
+        self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.uuid().decode('utf-8'), {}).get("TestEmitFloat", {}))
 
     def test_emit_signal(self):
         self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
